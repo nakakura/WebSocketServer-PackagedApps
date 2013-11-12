@@ -1,22 +1,29 @@
-///<reference path="http/http.ts"/>
-var WebSocketManager = (function () {
-    function WebSocketManager() {
-        this._port = 9999;
+///<reference path="./http/http.ts"/>
+
+class WebSocketManager{
+    _port: number;
+    _isServer: boolean;
+    _observers: Array<()=>void>;
+    _webServer: any;
+    _webSockServer: any;
+
+    constructor(port: number){
+        this._port = port;
         this._isServer = false;
     }
-    WebSocketManager.prototype.startListening = function () {
+
+    public startListening(){
         if (Http.HttpServer && Http.WebSocketServer) {
             // Listen for HTTP connections.
-            var server = new Http.HttpServer();
-            var wsServer = new Http.WebSocketServer(server);
-            server.listen(this._port);
+            this._webServer = new Http.HttpServer();
+            this._webSockServer = new Http.WebSocketServer(this._webServer);
+            this._webServer.listen(this._port);
             this._isServer = true;
 
-            server.addEventListener('request', function (req) {
+            this._webServer.addEventListener('request', function(req) {
                 var url = req.headers.url;
                 if (url == '/')
                     url = '/index.html';
-
                 // Serve the pages of this chrome application.
                 req.serveUrl(url);
                 return true;
@@ -25,21 +32,21 @@ var WebSocketManager = (function () {
             // A list of connected websockets.
             var connectedSockets = [];
 
-            wsServer.addEventListener('request', function (req) {
+            this._webSockServer.addEventListener('request', function(req) {
                 console.log('Client connected');
                 var socket = req.accept();
                 connectedSockets.push(socket);
 
                 // When a message is received on one socket, rebroadcast it on all
                 // connected sockets.
-                socket.addEventListener('message', function (e) {
+                socket.addEventListener('message', function(e) {
                     console.log(e.data);
                     for (var i = 0; i < connectedSockets.length; i++)
                         connectedSockets[i].send(e.data);
                 });
 
                 // When a socket is closed, remove it from the list of connected sockets.
-                socket.addEventListener('close', function () {
+                socket.addEventListener('close', function() {
                     console.log('Client disconnected');
                     for (var i = 0; i < connectedSockets.length; i++) {
                         if (connectedSockets[i] == socket) {
@@ -51,10 +58,23 @@ var WebSocketManager = (function () {
                 return true;
             });
         }
-    };
-    return WebSocketManager;
-})();
+    }
 
-var websocketmanager = new WebSocketManager();
-websocketmanager.startListening();
-//# sourceMappingURL=main.js.map
+    public addObserver(observer: ()=>void){
+        this._observers.push(observer);
+    }
+
+    public removeObserver(observer: ()=>void){
+
+    }
+
+    public removeAllObservers(){
+        this._observers = [];
+    }
+
+    public socketId(){
+        return this._webServer.socketId();
+//        this._webServer.close();
+    }
+}
+

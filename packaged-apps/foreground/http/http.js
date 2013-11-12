@@ -169,6 +169,10 @@ var Http;
 else if (keepAlive)
                 this._readRequestFromSocket(request._socketId);
         };
+
+        HttpServer.prototype.socketId = function () {
+            return this._socketInfo.socketId;
+        };
         return HttpServer;
     })(EventSource);
     Http.HttpServer = HttpServer;

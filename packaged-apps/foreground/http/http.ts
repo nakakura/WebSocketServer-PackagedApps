@@ -163,6 +163,10 @@ module Http{
             else if (keepAlive)
                 this._readRequestFromSocket(request._socketId);
         }
+
+        public socketId(){
+            return this._socketInfo.socketId;
+        }
     }
 
     class HttpRequest extends EventSource{
