@@ -16,7 +16,7 @@ class Sha1{
         this.reset();
     }
 
-    public reset(){
+    public reset(): void{
         this._chain[0] = 0x67452301;
         this._chain[1] = 0xefcdab89;
         this._chain[2] = 0x98badcfe;
@@ -27,12 +27,12 @@ class Sha1{
         this._total = 0;
     }
 
-    private _rotl(w, r): number{
+    private _rotl(w: number, r: number): number{
         return ((w << r) | (w >>> (32 - r))) & 0xffffffff;
     }
 
-    private _compress(buf){
-        var W = this._W;
+    private _compress(buf: number[]){
+        var W: number[] = this._W;
 
         // get 16 big endian words
         for (var i = 0; i < 64; i += 4) {
@@ -48,12 +48,12 @@ class Sha1{
             W[i] = this._rotl(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
         }
 
-        var a = this._chain[0];
-        var b = this._chain[1];
-        var c = this._chain[2];
-        var d = this._chain[3];
-        var e = this._chain[4];
-        var f, k;
+        var a: number = this._chain[0];
+        var b: number  = this._chain[1];
+        var c: number  = this._chain[2];
+        var d: number  = this._chain[3];
+        var e: number  = this._chain[4];
+        var f: number , k: number ;
 
         for (var i = 0; i < 80; i++) {
             if (i < 40) {
@@ -74,7 +74,7 @@ class Sha1{
                 }
             }
 
-            var t = (this._rotl(a, 5) + f + e + k + W[i]) & 0xffffffff;
+            var t: number = (this._rotl(a, 5) + f + e + k + W[i]) & 0xffffffff;
             e = d;
             d = c;
             c = this._rotl(b, 30);
@@ -89,12 +89,12 @@ class Sha1{
         this._chain[4] = (this._chain[4] + e) & 0xffffffff;
     }
 
-    public update(bytes, opt_length) {
+    public update(bytes: number[], opt_length: number) {
         if (!opt_length) {
             opt_length = bytes.length;
         }
 
-        var n = 0;
+        var n: number = 0;
 
         // Optimize for 64 byte chunks at 64 byte boundaries.
         if (this._inbuf == 0) {
@@ -142,7 +142,7 @@ class Sha1{
 
         this._compress(this._buf);
 
-        var n = 0;
+        var n: number = 0;
         for (var i = 0; i < 5; i++) {
             for (var j = 24; j >= 0; j -= 8) {
                 digest[n++] = (this._chain[i] >> j) & 255;
