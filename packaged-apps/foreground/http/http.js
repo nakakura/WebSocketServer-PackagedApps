@@ -103,27 +103,27 @@ var Http;
                 if (opt_host.length > 0)
                     address = opt_host[0];
 
-                _socket.listen(t._socketInfo.socketId, address || '0.0.0.0', port, 50, function (result) {
+                _socket.listen(t._socketInfo['socketId'], address || '0.0.0.0', port, 50, function (result) {
                     t._readyState = 1;
-                    t._acceptConnection(t._socketInfo.socketId);
+                    t._acceptConnection(t._socketInfo['socketId']);
                 });
             });
         };
 
         HttpServer.prototype._acceptConnection = function (socketId) {
             var t = this;
-            _socket.accept(t._socketInfo.socketId, function (acceptInfo) {
+            _socket.accept(t._socketInfo['socketId'], function (acceptInfo) {
                 t._onConnection(acceptInfo);
                 t._acceptConnection(socketId);
             });
         };
 
         HttpServer.prototype._onConnection = function (acceptInfo) {
-            this._readRequestFromSocket(acceptInfo.socketId);
+            this._readRequestFromSocket(acceptInfo['socketId']);
         };
 
         HttpServer.prototype._readRequestFromSocket = function (socketId) {
-            var t = this;
+            var self = this;
             var requestData = '';
             var endIndex = 0;
             var onDataRead = function (readInfo) {
@@ -156,7 +156,7 @@ var Http;
                         headerMap[requestLine[0]] = requestLine[1].trim();
                 }
                 var request = new HttpRequest(headerMap, socketId);
-                t._onRequest(request);
+                self._onRequest(request);
             };
             _socket.read(socketId, onDataRead);
         };
@@ -171,7 +171,7 @@ else if (keepAlive)
         };
 
         HttpServer.prototype.socketId = function () {
-            return this._socketInfo.socketId;
+            return this._socketInfo['socketId'];
         };
         return HttpServer;
     })(EventSource);
@@ -528,7 +528,7 @@ else if (str.length > 125)
 
             var array = WebsocketFrameString(op, data || '');
             _socket.write(this._socketId, array, function (writeInfo) {
-                if (writeInfo.resultCode < 0 || writeInfo.bytesWritten !== array.byteLength) {
+                if (writeInfo['resultCode'] < 0 || writeInfo['bytesWritten'] !== array.byteLength) {
                     t._close();
                 }
             });

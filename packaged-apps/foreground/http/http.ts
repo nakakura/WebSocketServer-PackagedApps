@@ -7,7 +7,7 @@ module Http{
     var _responseMap: {[key: string]: string;};
     initialize();
 
-    function initialize(){
+    function initialize(): void{
         if (!_socket)
             return;
 
@@ -26,8 +26,8 @@ module Http{
         };
     }
 
-    function arrayBufferToString(buffer): string{
-        var array = new Uint8Array(buffer);
+    function arrayBufferToString(buffer: Array<number>): string{
+        var array: Uint8Array = new Uint8Array(buffer);
         var str: string = '';
         for (var i = 0; i < array.length; ++i) {
             str += String.fromCharCode(array[i]);
@@ -35,9 +35,9 @@ module Http{
         return str;
     }
 
-    function stringToArrayBuffer(srcString: string){
-        var buffer = new ArrayBuffer(srcString.length);
-        var bufferView = new Uint8Array(buffer);
+    function stringToArrayBuffer(srcString: string): ArrayBuffer{
+        var buffer: ArrayBuffer = new ArrayBuffer(srcString.length);
+        var bufferView: Uint8Array = new Uint8Array(buffer);
         for (var i = 0; i < srcString.length; i++) {
             bufferView[i] = srcString.charCodeAt(i);
         }
@@ -51,13 +51,13 @@ module Http{
             this._listeners = {};
         }
 
-        public addEventListener(type: string, callback: (any)=>void ){
+        public addEventListener(type: string, callback: (any)=>void ): void{
             if (!this._listeners[type])
                 this._listeners[type] = [];
             this._listeners[type].push(callback);
         }
 
-        private _removeEventListener(type: string, callback: ()=>void ){
+        private _removeEventListener(type: string, callback: ()=>void ): void{
             if (!this._listeners[type])
                 return;
             for (var i = this._listeners[type].length - 1; i >= 0; i--) {
@@ -83,44 +83,44 @@ module Http{
 
     export class HttpServer extends EventSource{
         _readyState: number;
-        _socketInfo: any;
+        _socketInfo: {[key: string]: number};
 
         constructor(){
             super();
             this._readyState = 0;
         }
 
-        public listen(port, ...opt_host: string[]){
-            var t = this;
+        public listen(port: number, ...opt_host: string[]): void{
+            var t: HttpServer = this;
             _socket.create('tcp', {}, function(socketInfo) {
                 t._socketInfo = socketInfo;
-                var address = '0.0.0.0';
+                var address: string = '0.0.0.0';
                 if(opt_host.length > 0) address = opt_host[0];
 
-                _socket.listen(t._socketInfo.socketId, address || '0.0.0.0', port, 50,
+                _socket.listen(t._socketInfo['socketId'], address || '0.0.0.0', port, 50,
                     function(result) {
                         t._readyState = 1;
-                        t._acceptConnection(t._socketInfo.socketId);
+                        t._acceptConnection(t._socketInfo['socketId']);
                     });
             });
         }
 
-        private _acceptConnection(socketId){
-            var t = this;
-            _socket.accept(t._socketInfo.socketId, function(acceptInfo) {
+        private _acceptConnection(socketId: number): void{
+            var t: HttpServer = this;
+            _socket.accept(t._socketInfo['socketId'], function(acceptInfo) {
                 t._onConnection(acceptInfo);
                 t._acceptConnection(socketId);
             });
         }
 
-        private _onConnection(acceptInfo){
-            this._readRequestFromSocket(acceptInfo.socketId);
+        private _onConnection(acceptInfo: {[key:string]: number}): void{
+            this._readRequestFromSocket(acceptInfo['socketId']);
         }
 
-        private _readRequestFromSocket(socketId){
-            var t = this;
-            var requestData = '';
-            var endIndex = 0;
+        private _readRequestFromSocket(socketId: number): void{
+            var self: HttpServer = this;
+            var requestData: string = '';
+            var endIndex: number = 0;
             var onDataRead = function(readInfo) {
                 // Check if connection closed.
                 if (readInfo.resultCode <= 0) {
@@ -137,10 +137,10 @@ module Http{
                     return;
                 }
 
-                var headers = requestData.substring(0, endIndex).split('\n');
-                var headerMap = {};
+                var headers: string[] = requestData.substring(0, endIndex).split('\n');
+                var headerMap: {[key: string]: string} = {};
                 // headers[0] should be the Request-Line
-                var requestLine = headers[0].split(' ');
+                var requestLine: string[] = headers[0].split(' ');
                 headerMap['method'] = requestLine[0];
                 headerMap['url'] = requestLine[1];
                 headerMap['Http-Version'] = requestLine[2];
@@ -149,37 +149,38 @@ module Http{
                     if (requestLine.length == 2)
                         headerMap[requestLine[0]] = requestLine[1].trim();
                 }
-                var request = new HttpRequest(headerMap, socketId);
-                t._onRequest(request);
+                var request: HttpRequest = new HttpRequest(headerMap, socketId);
+                self._onRequest(request);
             }
             _socket.read(socketId, onDataRead);
         }
 
-        private _onRequest(request){
-            var type = request.headers['Upgrade'] ? 'upgrade' : 'request';
-            var keepAlive = request.headers['Connection'] == 'keep-alive';
+        private _onRequest(request: HttpRequest): void{
+            var type: string = request.headers['Upgrade'] ? 'upgrade' : 'request';
+            var keepAlive: boolean = request.headers['Connection'] == 'keep-alive';
             if (!this.dispatchEvent(type, request))
                 request.close();
             else if (keepAlive)
                 this._readRequestFromSocket(request._socketId);
         }
 
-        public socketId(){
-            return this._socketInfo.socketId;
+        public socketId(): number{
+            return this._socketInfo['socketId'];
         }
     }
 
     class HttpRequest extends EventSource{
         version: string;
-        headers: any;
-        _responseHeaders: any;
+        headers: {[key: string]: string};
+        _responseHeaders: {[key: string]: string};
         headersSent: boolean;
-        _socketId: any;
+        _socketId: number;
         _writes: number;
         bytesRemaining: number;
         _finished: boolean;
         readyState: number;
-        extensionTypes = {
+        extensionTypes: {[key: string]: string} =
+        {
             'css': 'text/css',
             'html': 'text/html',
             'htm': 'text/html',
@@ -188,9 +189,10 @@ module Http{
             'js': 'text/javascript',
             'png': 'image/png',
             'svg': 'image/svg+xml',
-            'txt': 'text/plain'};
+            'txt': 'text/plain'
+        };
 
-        constructor(headers, socketId){
+        constructor(headers: {[key: string]: string}, socketId: number){
             super();
 
             this.version = 'HTTP/1.1';
@@ -204,7 +206,7 @@ module Http{
             this.readyState = 1;
         }
 
-        public close(){
+        public close(): void{
             if (this.headers['Connection'] != 'keep-alive') {
                 _socket.disconnect(this._socketId);
                 _socket.destroy(this._socketId);
@@ -213,8 +215,8 @@ module Http{
             this.readyState = 3;
         }
 
-        public writeHead(responseCode, responseHeaders) {
-            var headerString = this.version + ' ' + responseCode + ' ' +
+        public writeHead(responseCode: number, responseHeaders: any): void{
+            var headerString: string = this.version + ' ' + responseCode + ' ' +
                 (_responseMap[responseCode] || 'Unknown');
             this._responseHeaders = responseHeaders;
             if (this.headers['Connection'] == 'keep-alive')
@@ -228,13 +230,13 @@ module Http{
             this._write(stringToArrayBuffer(headerString));
         }
 
-        public write(data) {
+        public write(data: any): void{
             if (this._responseHeaders['Transfer-Encoding'] == 'chunked') {
-                var newline = '\r\n';
-                var byteLength = (data instanceof ArrayBuffer) ? data.byteLength : data.length;
-                var chunkLength = byteLength.toString(16).toUpperCase() + newline;
-                var buffer = new ArrayBuffer(chunkLength.length + byteLength + newline.length);
-                var bufferView = new Uint8Array(buffer);
+                var newline: string = '\r\n';
+                var byteLength: number = (data instanceof ArrayBuffer) ? data.byteLength : data.length;
+                var chunkLength: string = byteLength.toString(16).toUpperCase() + newline;
+                var buffer: ArrayBuffer = new ArrayBuffer(chunkLength.length + byteLength + newline.length);
+                var bufferView: Uint8Array = new Uint8Array(buffer);
                 for (var i = 0; i < chunkLength.length; i++)
                     bufferView[i] = chunkLength.charCodeAt(i);
                 if (data instanceof ArrayBuffer) {
@@ -252,7 +254,7 @@ module Http{
             this._write(data);
         }
 
-        public end(opt_data) {
+        public end(opt_data: ArrayBuffer): void{
             if (opt_data)
                 this.write(opt_data);
             if (this._responseHeaders['Transfer-Encoding'] == 'chunked')
@@ -261,19 +263,19 @@ module Http{
             this._checkFinished();
         }
 
-        public serveUrl(url){
-            var t = this;
-            var xhr = new XMLHttpRequest();
+        public serveUrl(url: string): void{
+            var t: HttpRequest = this;
+            var xhr: XMLHttpRequest = new XMLHttpRequest();
             xhr.onloadend = function() {
-                var type = 'text/plain';
+                var type: string = 'text/plain';
                 if (this.getResponseHeader('Content-Type')) {
                     type = this.getResponseHeader('Content-Type');
                 } else if (url.indexOf('.') != -1) {
-                    var extension = url.substr(url.indexOf('.') + 1);
+                    var extension: string = url.substr(url.indexOf('.') + 1);
                     type = t.extensionTypes[extension] || type;
                 }
 
-                var contentLength = this.getResponseHeader('Content-Length');
+                var contentLength: number = this.getResponseHeader('Content-Length');
                 if (xhr.status == 200)
                     contentLength = (this.response && this.response.byteLength) || 0;
                 t.writeHead(this.status, {
@@ -286,8 +288,8 @@ module Http{
             xhr.send();
         }
 
-        private _write(array){
-            var t = this;
+        private _write(array: ArrayBuffer): void{
+            var t: HttpRequest = this;
             this.bytesRemaining += array.byteLength;
             _socket.write(this._socketId, array, function(writeInfo) {
                 if (writeInfo.bytesWritten < 0) {
@@ -299,7 +301,7 @@ module Http{
             });
         }
 
-        private _checkFinished(){
+        private _checkFinished(): void{
             if (!this._finished || this.bytesRemaining > 0)
                 return;
             this.close();
@@ -307,7 +309,7 @@ module Http{
     }
 
     export class WebSocketServer extends EventSource{
-        constructor(httpServer){
+        constructor(httpServer: HttpServer){
             super();
             httpServer.addEventListener('upgrade', this._upgradeToWebSocket.bind(this));
         }
@@ -330,23 +332,23 @@ module Http{
     }
 
     class WebSocketRequest extends HttpRequest{
-        constructor(httpRequest){
+        constructor(httpRequest: HttpRequest){
             super(httpRequest.headers, httpRequest._socketId);
             httpRequest._socketId = 0;
         }
 
-        public accept(){
+        public accept(): WebSocketServerSocket{
             // Construct WebSocket response key.
-            var clientKey = this.headers['Sec-WebSocket-Key'];
-            var toArray = function(str) {
-                var a = [];
+            var clientKey: string = this.headers['Sec-WebSocket-Key'];
+            var toArray: (string)=>number[] = function(str: string) {
+                var a: number[] = [];
                 for (var i = 0; i < str.length; i++) {
                     a.push(str.charCodeAt(i));
                 }
                 return a;
             }
-            var toString = function(a) {
-                var str = '';
+            var toString: (a: number[])=>string = function(a) {
+                var str: string = '';
                 for (var i = 0; i < a.length; i++) {
                     str += String.fromCharCode(a[i]);
                 }
@@ -355,15 +357,15 @@ module Http{
 
             // Magic string used for http connection key hashing:
             // http://en.wikipedia.org/wiki/WebSocket
-            var magicStr = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
+            var magicStr: string = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
             // clientKey is base64 encoded key.
             clientKey += magicStr;
-            var sha1 = new Sha1();
+            var sha1: Sha1 = new Sha1();
             sha1.reset();
-            var array = toArray(clientKey)
+            var array: number[] = toArray(clientKey)
             sha1.update(array, array.length);
-            var responseKey = btoa(toString(sha1.digest()));
+            var responseKey: string = btoa(toString(sha1.digest()));
             var responseHeader = {
                 'Upgrade': 'websocket',
                 'Connection': 'Upgrade',
@@ -371,7 +373,7 @@ module Http{
             if (this.headers['Sec-WebSocket-Protocol'])
                 responseHeader['Sec-WebSocket-Protocol'] = this.headers['Sec-WebSocket-Protocol'];
             this.writeHead(101, responseHeader);
-            var socket = new WebSocketServerSocket(this._socketId);
+            var socket: WebSocketServerSocket = new WebSocketServerSocket(this._socketId);
             // Detach the socket so that we don't use it anymore.
             this._socketId = 0;
             return socket;
@@ -383,30 +385,30 @@ module Http{
     }
 
     class WebSocketServerSocket extends EventSource{
-        _socketId: any;
+        _socketId: number;
         readyState: number;
 
-        constructor(socketId){
+        constructor(socketId: number){
             super();
             this._socketId = socketId;
             this._readFromSocket();
         }
 
-        public send(data){
+        public send(data: string): void{
             this._sendFrame(1, data);
         }
 
-        public close(){
+        public close(): void{
             this._sendFrame(8, null);
             this.readyState = 2;
         }
 
-        private _readFromSocket(){
-            var t = this;
-            var data = [];
-            var message = '';
-            var fragmentedOp = 0;
-            var fragmentedMessage = '';
+        private _readFromSocket(): void{
+            var t: WebSocketServerSocket = this;
+            var data: number[] = [];
+            var message: string = '';
+            var fragmentedOp: number = 0;
+            var fragmentedMessage: string = '';
 
             var onDataRead = function(readInfo) {
                 if (readInfo.resultCode <= 0) {
@@ -418,16 +420,16 @@ module Http{
                     return;
                 }
 
-                var a = new Uint8Array(readInfo.data);
+                var a: Uint8Array = new Uint8Array(readInfo.data);
                 for (var i = 0; i < a.length; i++)
                     data.push(a[i]);
 
                 while (data.length) {
-                    var length_code = -1;
-                    var data_start = 6;
-                    var mask;
-                    var fin = (data[0] & 128) >> 7;
-                    var op = data[0] & 15;
+                    var length_code: number = -1;
+                    var data_start: number = 6;
+                    var mask: number[];
+                    var fin: number = (data[0] & 128) >> 7;
+                    var op: number = data[0] & 15;
 
                     if (data.length > 1)
                         length_code = data[1] & 127;
@@ -455,7 +457,7 @@ module Http{
                     }
 
                     if (length_code > -1 && data.length >= data_start + length_code) {
-                        var decoded = data.slice(data_start, data_start + length_code).map(function(byte, index) {
+                        var decoded: number[] = data.slice(data_start, data_start + length_code).map(function(byte, index) {
                             return byte ^ mask[index % 4];
                         });
                         data = data.slice(data_start + length_code);
@@ -483,7 +485,7 @@ module Http{
             _socket.read(this._socketId, onDataRead);
         }
 
-        private _onFrame(op, data){
+        private _onFrame(op: number, data: string): boolean{
             if (op == 1) {
                 this.dispatchEvent('message', {'data': data});
             } else if (op == 8) {
@@ -498,19 +500,19 @@ module Http{
             return true;
         }
 
-        private _sendFrame(op, data){
-            var t = this;
-            var WebsocketFrameString = function(op, str) {
-                var length = str.length;
+        private _sendFrame(op: number, data: string){
+            var t: WebSocketServerSocket = this;
+            var WebsocketFrameString: (number, string)=>ArrayBuffer = function(op: number, str: string) {
+                var length: number = str.length;
                 if (str.length > 65535)
                     length += 10;
                 else if (str.length > 125)
                     length += 4;
                 else
                     length += 2;
-                var lengthBytes = 0;
-                var buffer = new ArrayBuffer(length);
-                var bv = new Uint8Array(buffer);
+                var lengthBytes: number = 0;
+                var buffer: ArrayBuffer = new ArrayBuffer(length);
+                var bv: Uint8Array = new Uint8Array(buffer);
                 bv[0] = 128 | (op & 15); // Fin and type text.
                 bv[1] = str.length > 65535 ? 127 :
                     (str.length > 125 ? 126 : str.length);
@@ -518,28 +520,28 @@ module Http{
                     lengthBytes = 8;
                 else if (str.length > 125)
                     lengthBytes = 2;
-                var len = str.length;
+                var len: number = str.length;
                 for (var i = lengthBytes - 1; i >= 0; i--) {
                     bv[2 + i] = len & 255;
                     len = len >> 8;
                 }
-                var dataStart = lengthBytes + 2;
+                var dataStart: number = lengthBytes + 2;
                 for (var i = 0; i < str.length; i++) {
                     bv[dataStart + i] = str.charCodeAt(i);
                 }
                 return buffer;
             };
 
-            var array = WebsocketFrameString(op, data || '');
-            _socket.write(this._socketId, array, function(writeInfo) {
-                if (writeInfo.resultCode < 0 ||
-                    writeInfo.bytesWritten !== array.byteLength) {
+            var array: ArrayBuffer = WebsocketFrameString(op, data || '');
+            _socket.write(this._socketId, array, function(writeInfo: {[key: string]: number}) {
+                if (writeInfo['resultCode'] < 0 ||
+                    writeInfo['bytesWritten'] !== array.byteLength) {
                     t._close();
                 }
             });
         }
 
-        private _close(){
+        private _close(): void{
             chrome.socket.disconnect(this._socketId);
             chrome.socket.destroy(this._socketId);
             this.readyState = 3;
